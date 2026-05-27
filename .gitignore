@@ -221,3 +221,14 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Terraform
+*.tfstate
+*.tfstate.*
+.terraform/
+
+# macOS
+.DS_Store
+
+# Data
+*.parquet
