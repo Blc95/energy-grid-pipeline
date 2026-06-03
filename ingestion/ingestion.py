@@ -8,6 +8,9 @@ import pandas as pd
 from dotenv import load_dotenv
 from pathlib import Path
 import pyarrow
+from datetime import timedelta
+from google.cloud import storage
+
 
 
 env_path = Path(__file__).resolve().parent.parent / ".env"
@@ -16,38 +19,36 @@ load_dotenv(dotenv_path=env_path)
 
 
 def fetch_data(country_code, start, end):
-    client = EntsoePandasClient(api_key=os.getenv("ENTSOE_TOKEN"))
+    token = os.getenv("ENTSOE_TOKEN")
     
-    if not client:
-        raise ValueError("Error: ENTSOE_TOKEN not set in enviroment")
+    if not token:
+        raise ValueError("Error: ENTSOE_TOKEN not set in environment")
     
-    start = start
-    end = end
-    country_code = country_code
+    client = EntsoePandasClient(api_key=token)
     
-    data = client.query_day_ahead_prices(country_code=country_code, start=start, end=end)
+    data = client.query_day_ahead_prices(country_code=country_code,
+                                         start=start,
+                                         end=end
+                                         )
     
     df = data.reset_index()
     df.columns = ["timestamp", "price"]
     df["zone"] = country_code
-    df = df.iloc[:-1, :]
+    df = df[df["timestamp"] < end]
+    days = df.groupby(pd.Grouper(key='timestamp', freq='D'))
     
-    return df
+    for day, group in days:
+        day_str = day.strftime('%Y-%m-%d')
+        gcs_path = f"gs://energy-grid-pipeline-raw/prices/{country_code}/{day_str}/data.parquet"
+        group.to_parquet(gcs_path)
 
 def main():
     
-    df_data = fetch_data(
+    fetch_data(
         country_code='DK_1',
         start=pd.Timestamp('20260520', tz='Europe/Brussels'),
-        end=pd.Timestamp('20260521', tz='Europe/Brussels')
-        )
-    
-    print(df_data.head(10))
-    print(df_data.tail(10))
-    print(df_data.shape)
-    print(df_data.columns)
-    
-    df_data.to_parquet("prices.parquet")
+        end=pd.Timestamp('20260522', tz='Europe/Brussels')
+    )
 
 if __name__ == "__main__":
     main()
