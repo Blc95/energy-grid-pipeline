@@ -18,7 +18,7 @@ without rework.
 Electricity is interesting because of one single fact: It can't be stored.
 
 Hence the prices vary wildly and can even become negative! That volatility is exactly what makes this an interesting engineering problem. 
-Stale or unreliable data has real consequences — for grid operators, energy traders, and consumers on flexible tariffs.
+Stale or unreliable data has real consequences for e.g. grid operators, energy traders, and consumers on flexible tariffs.
 This project builds the data infrastructure to ingest, land, and model that data reliably and reproducibly,
 using the ENTSO-E Transparency Platform as the source of truth.
 
