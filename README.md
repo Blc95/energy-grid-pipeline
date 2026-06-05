@@ -9,7 +9,7 @@ without rework.
 
 > **Status:** In active development. 
 > Completed: Single dataset on day-ahead prices ingested to GCS, IaC with terraform, load into BigQuery
-> Still to come: Multiple datasets ingested into GCS, IaC with terraform and loading into BigQuery. Tranformation with dbt and MLOps infrastructure. Robestness and logging.
+> Still to come: Multiple datasets ingested into GCS, IaC with terraform and loading into BigQuery, tranformation with dbt, orchestration with dagster, CI/CD, and MLOps infrastructure. Robestness and logging.
 
 ---
 
