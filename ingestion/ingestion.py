@@ -96,9 +96,43 @@ def load_to_big_query(date, country_code, table):
 
     load_job.result()  # Waits for the job to complete.
 
-    destination_table = client.get_table(table_id_base)
-    print("Loaded {} rows.".format(destination_table.num_rows))
+    print(f"Loaded {load_job.output_rows}")
+    
+    
+### GENERATION ###
+def fetch_generation(country_code, start, end, bucket):
+    token = os.getenv("ENTSOE_TOKEN")
+    if not token:
+        raise ValueError("Error: ENTSOE_TOKEN not set in environment")
+    client = EntsoePandasClient(api_key=token)
+    data = client.query_generation(country_code, start=start, end=end, psr_type=None)
+    
+    df = data.reset_index()
+    df.rename(columns={"index": "timestamp"}, inplace=True)
+    df["zone"] = country_code
+    df = df[df["timestamp"] < end]
+    df["delivery_date"] = df["timestamp"].dt.tz_convert("Europe/Copenhagen").dt.date
+    
+    # Convert to datetime64
+    df["timestamp"] = df["timestamp"].dt.tz_convert("UTC")
+    
+    melted_df = pd.melt(df,
+            id_vars=["timestamp", "delivery_date", "zone"],
+            var_name="fuel_type",
+            value_name="generation_mw"
+            )
+    
+    days = melted_df.groupby("delivery_date")
+    
+    for day, group in days:
+        if group.empty:
+            continue
+        day_str = day.strftime('%Y-%m-%d')
+        gcs_path = build_gcs_path(country_code=country_code, date=day_str, table=bucket)
+        group.reset_index(drop=True).to_parquet(gcs_path)
 
+    
+### MAIN ###
 def main():
     country_codes = ["DK_1", "DK_2"]
     start = pd.Timestamp('20251025', tz='Europe/Brussels')
@@ -106,28 +140,31 @@ def main():
     tables = ["prices", "load"]
     query_methods = ["query_day_ahead_prices", "query_load"]
     
-    # for query_method in query_methods:
-    #     if query_method == "query_day_ahead_prices":
-    #         bucket = "prices"
-    #         value_column = "price"
-    #     elif query_method == "query_load":
-    #         bucket = "load"
-    #         value_column = "actual_load_mw"
-            
-    #     for country_code in country_codes:
-    #         fetch(country_code=country_code,
-    #             start=start,
-    #             end=end,
-    #             query_method=query_method,
-    #             value_column=value_column,
-    #             bucket=bucket)
     
     dates = pd.date_range(
         start=start,
         end=end,
         freq='D',
     )[:-1]
-
+    
+    ### PRICES AND LOAD ###
+    for query_method in query_methods:
+        if query_method == "query_day_ahead_prices":
+            bucket = "prices"
+            value_column = "price"
+        elif query_method == "query_load":
+            bucket = "load"
+            value_column = "actual_load_mw"
+            
+        for country_code in country_codes:
+            fetch(country_code=country_code,
+                start=start,
+                end=end,
+                query_method=query_method,
+                value_column=value_column,
+                bucket=bucket)
+    
+    
     for table in tables:
         for country_code in country_codes:
             for day in dates:
@@ -138,6 +175,25 @@ def main():
                     date=day,
                     table=table
                 )
+  
+    ### GENERATION ###
+    g_table = "generation"
+    
+    for country_code in country_codes:
+        fetch_generation(country_code=country_code,
+                        start=start,
+                        end=end,
+                        bucket=g_table)
+    
+    
+    for country_code in country_codes:
+        for day in dates:
+                load_to_big_query(
+                    country_code=country_code,
+                    date=day,
+                    table=g_table
+                )
+  
 
 if __name__ == "__main__":
     main()

@@ -2,7 +2,7 @@ from google.cloud import bigquery
 
 client = bigquery.Client(project="energy-grid-pipeline")
 
-# Creating the table
+### PRICES TABLE ###
 table_id_prices = "energy-grid-pipeline.raw.prices"
 schema_prices = [
     bigquery.SchemaField("timestamp", "TIMESTAMP"),
@@ -24,6 +24,8 @@ print(
     f"partitioned on column {table_prices.time_partitioning.field}."
 )
 
+
+### LOAD TABLE ###
 table_id_load = "energy-grid-pipeline.raw.load"
 
 schema_load = [
@@ -44,4 +46,28 @@ table_load = client.create_table(table_load, exists_ok=True)
 print(
     f"Created table {table_load.project}.{table_load.dataset_id}.{table_load.table_id}, "
     f"partitioned on column {table_load.time_partitioning.field}."
+)
+
+### GENERATION TABLE ###
+table_id_generation = "energy-grid-pipeline.raw.generation"
+
+schema_generation = [
+    bigquery.SchemaField("timestamp", "TIMESTAMP"),
+    bigquery.SchemaField("delivery_date", "DATE"),
+    bigquery.SchemaField("zone", "STRING"),
+    bigquery.SchemaField("fuel_type", "STRING"),
+    bigquery.SchemaField("generation_mw", "FLOAT64"),
+]
+
+table_generation = bigquery.Table(table_id_generation, schema=schema_generation)
+table_generation.time_partitioning = bigquery.TimePartitioning(
+    type_=bigquery.TimePartitioningType.DAY,
+    field="delivery_date",
+)
+
+table_generation = client.create_table(table_generation, exists_ok=True)
+
+print(
+    f"Created table {table_generation.project}.{table_generation.dataset_id}.{table_generation.table_id}, "
+    f"partitioned on column {table_generation.time_partitioning.field}."
 )
