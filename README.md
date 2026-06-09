@@ -35,9 +35,9 @@ on each dataset's natural key.
 **Done — full ingestion layer.** All four datasets (day-ahead prices, load,
 generation by fuel type, cross-border flows) ingested for both Danish bidding zones
 (DK1/DK2), landed in GCS and loaded into BigQuery, idempotently and
-timezone/DST-correct. Infrastructure managed in Terraform.
+timezone/DST-correct. Infrastructure managed in Terraform. Containerized with Docker.
 
-**Next.** Docker · dbt models (star schema) · Dagster orchestration · CI/CD ·
+**next** - dbt models (star schema) · Dagster orchestration · CI/CD ·
 dashboard · forecasting (MLOps).
 
 ## Run it

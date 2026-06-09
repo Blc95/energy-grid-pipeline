@@ -2,3 +2,7 @@
 .venv
 __pycache__
 .git
+terraform/
+*.tfstate
+*.md
+*.ipynb
