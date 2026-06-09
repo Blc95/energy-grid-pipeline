@@ -1,7 +1,5 @@
 from requests import Session
-import psycopg2
 import os
-import sys
 import logging
 from entsoe import EntsoePandasClient
 import pandas as pd

@@ -35,8 +35,6 @@ pandas==3.0.3
 propcache==0.5.2
 proto-plus==1.28.0
 protobuf==7.35.0
-psycopg2==2.9.12
-psycopg2-binary==2.9.12
 pyarrow==24.0.0
 pyasn1==0.6.3
 pyasn1_modules==0.4.2
