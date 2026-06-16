@@ -232,3 +232,6 @@ __marimo__/
 
 # Data
 *.parquet
+
+# Dagster
+.tmp_dagster_home_*
